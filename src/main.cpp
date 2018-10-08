@@ -8,4 +8,4 @@ void loop() {
     // put your main code here, to run repeatedly:
 }
 
-// AK: Testkommentar
+// AK: Testkommentar; PG: Scheint zu gehen
