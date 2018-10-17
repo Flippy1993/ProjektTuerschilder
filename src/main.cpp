@@ -14,5 +14,3 @@ void loop() {
     digitalWrite(LED, HIGH); // LED einschalten
     delay(1000); // Eine Sekunde warten
 }
-
-// AK: Testkommentar; PG: Scheint zu gehen
