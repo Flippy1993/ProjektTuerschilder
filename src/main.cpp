@@ -48,6 +48,7 @@ void setup() {
 
     gfx.init();
     gfx.fillBuffer(0x4);
+    
     gfx.commit();
 
     Serial.println("setup() done!");
