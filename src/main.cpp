@@ -3,6 +3,7 @@
 #include <SPI.h>
 #include "EPD_WaveShare_75.h"
 #include "DisplayDriver.h"
+#include "network.h" // 24.10.2018 AK: Wifi Test
 
 
 #define CS 16
@@ -27,6 +28,13 @@ void setup() {
     // put your setup code here, to run once:   
 
     Serial.begin(115200); // ak: Datenuebertragungsrate auf 115000 Bits/s stellen. (VS Code Default)
+
+    // Begin 24.10.18 AK Wifi-Test
+    Serial.println("Setting up Network Connection");
+    boolean connectionSuccesfull = setupNetwork("KA-WLAN","","http://cp.ka-wlan.de/login",80);
+    Serial.println("Network Connected succesfully: " + String(connectionSuccesfull));
+    // Ende 24.10.18 AK Wifi-Test
+
     pinMode(LED, OUTPUT); // PIN 5 wird Ausgabe-PIN
 
 
