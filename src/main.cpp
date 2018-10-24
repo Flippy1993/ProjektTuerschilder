@@ -31,7 +31,7 @@ void setup() {
 
     // Begin 24.10.18 AK Wifi-Test
     Serial.println("Setting up Network Connection");
-    boolean connectionSuccesfull = setupNetwork("KA-WLAN","","http://cp.ka-wlan.de/login",80);
+    boolean connectionSuccesfull = setupNetwork("KA-WLAN","","193.196.64.119/Intranetaccess",80); //http://cp.ka-wlan.de/login
     Serial.println("Network Connected succesfully: " + String(connectionSuccesfull));
     // Ende 24.10.18 AK Wifi-Test
 

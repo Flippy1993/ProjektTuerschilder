@@ -9,6 +9,8 @@ boolean setupNetwork(const char * networkName, const char * networkPswd, const c
   Serial.println("Starting Connection to: " + String(networkName));
   connectToWiFi(networkName, networkPswd);
 
+  delay(10000);
+
   /* KA-WLAN Anmeldeseite requesten und parsen um Zugangstoken zu erhalten*/
   requestURL(hostDomain, hostPort); // Connect to server
 
