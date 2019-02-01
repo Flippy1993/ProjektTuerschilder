@@ -1,4 +1,11 @@
 #include "network.h"
+#include <iostream>
+#include <string>
+#include <numeric>
+#include <iterator>
+#include <cstdint>
+#include <sstream>
+#include <WiFi.h>
 
 const int BUTTON_PIN = 0;
 const int LED_PIN = 5;
@@ -17,14 +24,40 @@ boolean setupNetwork(const char * networkName, const char * networkPswd, const c
   return true;
 }
 
+String getMacAddress()
+{
+  String sMacAddress;
+  byte mac[6];
+
+  WiFi.macAddress(mac);
+
+  Serial.print("MAC: ");
+  Serial.print(mac[5],HEX);
+  Serial.print(":");
+  Serial.print(mac[4],HEX);
+  Serial.print(":");
+  Serial.print(mac[3],HEX);
+  Serial.print(":");
+  Serial.print(mac[2],HEX);
+  Serial.print(":");
+  Serial.print(mac[1],HEX);
+  Serial.print(":");
+  Serial.println(mac[0],HEX);
+
+  return sMacAddress;
+}
+
 void connectToWiFi(const char * ssid, const char * pwd)
 {
+  String sMacAddress;
   int ledState = 0;
 
   printLine();
   Serial.println("Connecting to WiFi network: " + String(ssid));
 
   WiFi.begin(ssid, pwd);
+
+  sMacAddress = getMacAddress();
 
   while (WiFi.status() != WL_CONNECTED) 
   {
@@ -57,10 +90,32 @@ void requestURL(const char * host, uint8_t port)
   Serial.println("Connected!");
   printLine();
 
+  //Get Mac-Adress
+  uint8_t l_Mac[6];
+  //esp_wifi_get_mac(ESP_IF_WIFI_STA, l_Mac);
+  WiFi.macAddress(l_Mac);
+  std::string s;
+    s.reserve( 6 );
+
+    for ( int value : l_Mac ) s += std::to_string( value ) + ' ';
+
+    std::cout << s << std::endl;
+  //Serial.println("Mac-Address: " + l_Mac);
+
+  //Mac-Adresse rausfinden -> in String kompilieren -> in der Anfrage mitschicken
+
+
+
   // This will send the request to the server
   client.print((String)"GET / HTTP/1.1\r\n" +
                "Host: " + String(host) + "\r\n" +
-               "Connection: close\r\n\r\n");
+               "User-Agent: Mozilla/5.0 () Gecko/20100101 Firefox/64.0\r\n" +
+               "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n" +
+               "Accept-Language: en-us,en;q=0.5\r\n" +  //--compressed
+               "Referer: http://cp.ka-wlan.de/login\r\n" +
+               "Connection: keep-alive\r\n" +
+               "Upgrade-Insecure-Requests: 1\r\n" +
+               "\r\n"); //--date dst=&popup=false&username=[Mac-Adresse]&password=w5wb8w096   Frage:Passwort aus Mac generiert?
   unsigned long timeout = millis();
   while (client.available() == 0) 
   {

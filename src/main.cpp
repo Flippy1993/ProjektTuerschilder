@@ -4,6 +4,7 @@
 #include "EPD_WaveShare_75.h"
 #include "DisplayDriver.h"
 #include "network.h" // 24.10.2018 AK: Wifi Test
+#include <WiFi.h>
 
 
 #define CS 16
@@ -31,12 +32,11 @@ void setup() {
 
     // Begin 24.10.18 AK Wifi-Test
     Serial.println("Setting up Network Connection");
-    boolean connectionSuccesfull = setupNetwork("KA-WLAN","","10.172.0.1",80); //http://cp.ka-wlan.de/login
+    boolean connectionSuccesfull = setupNetwork("KA-WLAN","","http://cp.ka-wlan.de/login",80); //10.172.0.1
     Serial.println("Network Connected succesfully: " + String(connectionSuccesfull));
     // Ende 24.10.18 AK Wifi-Test
-
+    requestURL("www.google.de", 80);
     pinMode(LED, OUTPUT); // PIN 5 wird Ausgabe-PIN
-
 
 
     gfx.init();
@@ -66,6 +66,8 @@ void loop() {
     delay(1000); // Eine Sekunde warten
     digitalWrite(LED, LOW);*/
 
+    //requestUrl("www.google.de", 80);
+
     gfx.setRotation(rotation);
     gfx.fillBuffer(3);
     gfx.setColor(0);
@@ -73,7 +75,7 @@ void loop() {
     gfx.drawLine(0, 0, gfx.getWidth(), gfx.getHeight());
     gfx.drawString(10, 10, "Hello World");
     gfx.setFont(ArialMT_Plain_16);
-    gfx.drawString(10, 30, "Everything works!");
+    gfx.drawString(10, 30, "Everything works! Except the internet, probably, or not");
     gfx.setFont(ArialMT_Plain_24);
     gfx.drawString(10, 55, "Yes!");
 
