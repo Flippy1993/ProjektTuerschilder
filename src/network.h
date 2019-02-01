@@ -7,6 +7,10 @@ boolean setupNetwork(const char * networkName, const char * networkPswd, const c
 
 void connectToWiFi(const char * ssid, const char * pwd);
 
+String convertMac2String(byte arrMac[6]);
+
+String getMacAddress();
+
 void requestURL(const char * host, uint8_t port);
 
 void printLine();

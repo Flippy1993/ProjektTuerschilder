@@ -12,52 +12,31 @@ const int LED_PIN = 5;
 
 boolean setupNetwork(const char * networkName, const char * networkPswd, const char * hostDomain, int hostPort)
 {
+  String sMacAddress;
+
   // Connect to the WiFi network (see function below loop)
   Serial.println("Starting Connection to: " + String(networkName));
   connectToWiFi(networkName, networkPswd);
 
+  Serial.println("Resolving local MAC...");
+  WiFi.begin(networkName, networkPswd);
+  sMacAddress = getMacAddress();
+
   delay(3000);
 
   /* KA-WLAN Anmeldeseite requesten und parsen um Zugangstoken zu erhalten*/
-  requestURL(hostDomain, hostPort); // Connect to server
+  Serial.println("Requesting login page to parse access token");
+  requestURL(hostDomain, hostPort, sMacAddress); // Connect to server
 
   return true;
 }
 
-String getMacAddress()
-{
-  String sMacAddress;
-  byte mac[6];
-
-  WiFi.macAddress(mac);
-
-  Serial.print("MAC: ");
-  Serial.print(mac[5],HEX);
-  Serial.print(":");
-  Serial.print(mac[4],HEX);
-  Serial.print(":");
-  Serial.print(mac[3],HEX);
-  Serial.print(":");
-  Serial.print(mac[2],HEX);
-  Serial.print(":");
-  Serial.print(mac[1],HEX);
-  Serial.print(":");
-  Serial.println(mac[0],HEX);
-
-  return sMacAddress;
-}
-
 void connectToWiFi(const char * ssid, const char * pwd)
 {
-  String sMacAddress;
   int ledState = 0;
 
   printLine();
   Serial.println("Connecting to WiFi network: " + String(ssid));
-
-  WiFi.begin(ssid, pwd);
-
-  sMacAddress = getMacAddress();
 
   while (WiFi.status() != WL_CONNECTED) 
   {
@@ -75,7 +54,7 @@ void connectToWiFi(const char * ssid, const char * pwd)
 }
 
 
-void requestURL(const char * host, uint8_t port)
+void requestURL(const char * host, uint8_t port, String)
 {
   printLine();
   Serial.println("Connecting to domain: " + String(host));
@@ -90,6 +69,7 @@ void requestURL(const char * host, uint8_t port)
   Serial.println("Connected!");
   printLine();
 
+/*
   //Get Mac-Adress
   uint8_t l_Mac[6];
   //esp_wifi_get_mac(ESP_IF_WIFI_STA, l_Mac);
@@ -103,7 +83,7 @@ void requestURL(const char * host, uint8_t port)
   //Serial.println("Mac-Address: " + l_Mac);
 
   //Mac-Adresse rausfinden -> in String kompilieren -> in der Anfrage mitschicken
-
+*/
 
 
   // This will send the request to the server
@@ -138,6 +118,32 @@ void requestURL(const char * host, uint8_t port)
   Serial.println("closing connection");
   client.stop();
 }
+
+String getMacAddress()
+{
+  String sMacAddress;
+  byte mac[6];
+
+  WiFi.macAddress(mac);
+
+  sMacAddress = convertMac2String(mac);
+  
+  Serial.println("MAC: "+sMacAddress);
+  return sMacAddress;
+}
+
+String convertMac2String(byte arrMac[6]){
+  String sMac;
+  for (byte i = 0; i < 6; ++i)
+  {
+    char buf[3];
+    sprintf(buf, "%2X", arrMac[i]);
+    sMac += buf;
+    if (i < 5) sMac += ':';
+  }
+  return sMac;
+}
+
 
 void printLine()
 {
