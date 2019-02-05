@@ -13,6 +13,12 @@ String getMacAddress();
 
 void requestURL(const char * host, uint8_t port);
 
+void requestURL(const char * host, uint8_t port, String sMacAddress);
+
+void requestURL2(String mac, String ip);
+
+void apiRequest();
+
 void printLine();
 
 #endif

@@ -32,10 +32,11 @@ void setup() {
 
     // Begin 24.10.18 AK Wifi-Test
     Serial.println("Setting up Network Connection");
-    boolean connectionSuccesfull = setupNetwork("KA-WLAN","","http://cp.ka-wlan.de/login",80); //10.172.0.1
+    boolean connectionSuccesfull = setupNetwork("KA-WLAN","","cp.ka-wlan.de",80); //10.172.0.1
     Serial.println("Network Connected succesfully: " + String(connectionSuccesfull));
     // Ende 24.10.18 AK Wifi-Test
-    requestURL("www.google.de", 80);
+    //requestURL("cp.ka-wlan.de", 80);
+    //requestURL2("http://www.iwi.hs-karlsruhe.de/Intranetaccess/REST/buildings/facultyrooms/display/texts/ZZ-22-33-44-55-66");
     pinMode(LED, OUTPUT); // PIN 5 wird Ausgabe-PIN
 
 
