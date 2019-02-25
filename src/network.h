@@ -3,23 +3,19 @@
 
 #include <Wifi.h>
 
-boolean setupNetwork(const char * networkName, const char * networkPswd, const char * hostDomain, int hostPort);
+bool setupNetwork(const char * networkName, const char * hostDomain, int hostPort);
 
-void connectToWiFi(const char * ssid, const char * pwd);
+bool connectToWiFi(const char * ssid);
 
 String convertMac2String(byte arrMac[6]);
 
 String getMacAddress();
 
-void getLoginPage(String url, String mac);
+void extractLoginParams(String url, String mac);
 
-void requestURL(const char * host, uint8_t port);
+bool loginToWifi(String url);
 
-void requestURL(const char * host, uint8_t port, String sMacAddress);
-
-void requestURL2(String url);
-
-void apiRequest();
+void apiRequest(String url, boolean demoMode);
 
 void printLine();
 

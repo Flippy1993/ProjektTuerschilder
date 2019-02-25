@@ -21,34 +21,29 @@ struct login_t {
 const int BUTTON_PIN = 0;
 const int LED_PIN = 5;
 String localIp;
+boolean connected = false;
+boolean loggedIn = false;
 
-boolean setupNetwork(const char * networkName, const char * networkPswd, const char * hostDomain, int hostPort)
+bool setupNetwork(const char * networkName, const char * hostDomain, int hostPort)
 {
+  bool successfull = false;
   String sMacAddress;
   Serial.println("Resolving local MAC...");
-  WiFi.begin(networkName, networkPswd);
-  sMacAddress = getMacAddress();
-
-  String url = "http://" + (String)hostDomain + "/login";
+  WiFi.begin(networkName,"");
+  sMacAddress = getMacAddress();  
   
   // Connect to the WiFi network (see function below loop)
   Serial.println("Starting Connection to: " + String(networkName));
-  connectToWiFi(networkName, networkPswd);
+  successfull = connectToWiFi(networkName);
 
-  //delay(3000);
-  getLoginPage(url, sMacAddress);
-  requestURL2(url);
-
-  apiRequest();
+  String url = "http://" + (String)hostDomain + "/login";
+  extractLoginParams(url, sMacAddress);
+  successfull = loginToWifi(url);  
  
-  /* KA-WLAN Anmeldeseite requesten und parsen um Zugangstoken zu erhalten*/
-  //Serial.println("Requesting login page to parse access token");
-  //requestURL(hostDomain, hostPort, sMacAddress); 
-
-  return true;
+  return successfull;
 }
 
-void connectToWiFi(const char * ssid, const char * pwd){
+bool connectToWiFi(const char * ssid){
   int ledState = 0;
 
   printLine();
@@ -68,9 +63,15 @@ void connectToWiFi(const char * ssid, const char * pwd){
   Serial.print("IP address: ");
   localIp = WiFi.localIP().toString();
   Serial.println(WiFi.localIP());
+  if(WiFi.localIP().toString() != "")
+    connected = true;
+  else
+    connected = false;
+
+  return connected;  
 }
 
-void getLoginPage(String url, String mac){
+void extractLoginParams(String url, String mac){
 
   HTTPClient http;
   http.begin(url);
@@ -80,10 +81,7 @@ void getLoginPage(String url, String mac){
 
       Serial.println("Extracting Request Params from Payload");
       String payload = http.getString();
-      //Serial.println("HTTP Code: "+httpCode);
-      //Serial.println("Response: "+payload);
-
-
+ 
       String raw = payload.substring(payload.indexOf("<form name=\"login\" action=\"http://cp.ka-wlan.de/login\" method=\"post\">"));
       raw = raw.substring(0,raw.indexOf("</td>"));
       String param_dst = raw.substring(raw.indexOf("name=\"dst\" value=\"")+18);
@@ -111,29 +109,19 @@ void getLoginPage(String url, String mac){
   http.end(); //Free the resources
 }
 
-void requestURL2(String url){
-
-  //String url = "http://cp.ka-wlan.de/login";
+bool loginToWifi(String url){
 
     HTTPClient http;
-    //http.begin(url); //Specify the URL
+    http.begin(url);
     http.begin("http://cp.ka-wlan.de/login");
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-    /*http.addHeader("dst", login.dst);
-    http.addHeader("popup", login.popup);
-    http.addHeader("username", login.username);
-    http.addHeader("password", login.password);*/
-
-    //int httpCode = http.POST("?dst="+login.dst+"?popup="+login.popup+"?username="+login.username+"?password="+login.password); //Make the request
-
+    // Replacing all : in mac address with % for formatting as url parameter
     while(login.username.indexOf(":") != -1){
       login.username.replace(":","%");
     }
 
-    Serial.println(login.username);
-
-    int httpCode = http.POST("dst=&popup=false&username="+login.username+"&password=w5wb8w096");
+    int httpCode = http.POST("dst="+login.dst+"&popup="+login.popup+"&username="+login.username+"&password="+login.password);
 
     Serial.println("Sending POST -> "+url+" -> Code:" + httpCode);
 
@@ -141,18 +129,32 @@ void requestURL2(String url){
  
         String payload = http.getString();
         Serial.println("HTTP Code: "+httpCode);
-        Serial.println("Response: "+payload);
+        //Serial.println("Response: "+payload);
+        loggedIn = true;
       }
  
     else {
       Serial.println("Error on HTTP request");
+      loggedIn = false;
     }
  
     http.end(); //Free the resources
+    return loggedIn;
 }
 
-void apiRequest(){
-    String url = "http://www.iwi.hs-karlsruhe.de/Intranetaccess/REST/buildings/facultyrooms/display/texts/ZZ-22-33-44-55-66";
+void apiRequest(String url, boolean demoMode){
+    //String url = "http://www.iwi.hs-karlsruhe.de/Intranetaccess/REST/buildings/facultyrooms/display/texts/ZZ-22-33-44-55-66";
+
+    String demoMac = "ZZ-22-33-44-55-66";
+
+    while(login.username.indexOf(":") != -1){
+      login.username.replace("%","-");
+    }
+
+    if(demoMode)
+      url += demoMac;
+    else
+      url += login.username;
 
     Serial.println("Sending request to: "+url);
     HTTPClient http;
@@ -172,121 +174,6 @@ void apiRequest(){
     }
  
     http.end(); //Free the resources
-}
-
-void requestURL(const char * host, uint8_t port, String mac)
-{  
-  printLine();
-  Serial.println("Connecting to domain: " + String(host));
-
-  // Use WiFiClient class to create TCP connections
-  WiFiClient client;
-  if (!client.connect(host, port))
-  {
-    Serial.println("connection failed");
-    return;
-  }
-  Serial.println("Connected!");
-  printLine();
-
-  // This will send the request to the server
-  client.print((String)"GET / HTTP/1.1\r\n" +
-               "Host: " + String(host) + "\r\n" +
-               "User-Agent: Mozilla/5.0 () Gecko/20100101 Firefox/64.0\r\n" +
-               "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n" +
-               "Accept-Language: en-us,en;q=0.5\r\n" +  //--compressed
-               "Referer: http://"+host+"/login\r\n" +
-               "Connection: keep-alive\r\n" +
-               "Upgrade-Insecure-Requests: 1\r\n" +
-               "date dst=&popup=false&username="+mac+"&password=w5wb8w096\r\n"); //--date dst=&popup=false&username=[Mac-Adresse]&password=w5wb8w096   Frage:Passwort aus Mac generiert?
-  unsigned long timeout = millis();
-  while (client.available() == 0) 
-  {
-    if (millis() - timeout > 10000) 
-    {
-      Serial.println(">>> Client Timeout !");
-      client.stop();
-      return;
-    }
-  }
-
-  // Read all the lines of the reply from server and print them to Serial
-  while (client.available()) 
-  {
-    String line = client.readStringUntil('\r');
-    Serial.print(line);
-  }
-
-  Serial.println();
-  Serial.println("closing connection");
-  client.stop();
-
-  
-}
-
-void requestURL(const char * host, uint8_t port)
-{
-  printLine();
-  Serial.println("Connecting to domain: " + String(host));
-
-  // Use WiFiClient class to create TCP connections
-  WiFiClient client;
-  if (!client.connect(host, port))
-  {
-    Serial.println("connection failed");
-    return;
-  }
-  Serial.println("Connected!");
-  printLine();
-
-/*
-  //Get Mac-Adress
-  uint8_t l_Mac[6];
-  //esp_wifi_get_mac(ESP_IF_WIFI_STA, l_Mac);
-  WiFi.macAddress(l_Mac);
-  std::string s;
-    s.reserve( 6 );
-
-    for ( int value : l_Mac ) s += std::to_string( value ) + ' ';
-
-    std::cout << s << std::endl;
-  //Serial.println("Mac-Address: " + l_Mac);
-
-  //Mac-Adresse rausfinden -> in String kompilieren -> in der Anfrage mitschicken
-*/
-
-
-  // This will send the request to the server
-  client.print((String)"GET / HTTP/1.1\r\n" +
-               "Host: " + String(host) + "\r\n" +
-               "User-Agent: Mozilla/5.0 () Gecko/20100101 Firefox/64.0\r\n" +
-               "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n" +
-               "Accept-Language: en-us,en;q=0.5\r\n" +  //--compressed
-               "Referer: http://cp.ka-wlan.de/login\r\n" +
-               "Connection: keep-alive\r\n" +
-               "Upgrade-Insecure-Requests: 1\r\n" +
-               "\r\n"); //--date dst=&popup=false&username=[Mac-Adresse]&password=w5wb8w096   Frage:Passwort aus Mac generiert?
-  unsigned long timeout = millis();
-  while (client.available() == 0) 
-  {
-    if (millis() - timeout > 5000) 
-    {
-      Serial.println(">>> Client Timeout !");
-      client.stop();
-      return;
-    }
-  }
-
-  // Read all the lines of the reply from server and print them to Serial
-  while (client.available()) 
-  {
-    String line = client.readStringUntil('\r');
-    Serial.print(line);
-  }
-
-  Serial.println();
-  Serial.println("closing connection");
-  client.stop();
 }
 
 String getMacAddress()

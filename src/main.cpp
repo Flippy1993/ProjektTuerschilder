@@ -25,18 +25,21 @@ EPD_WaveShare75 epd(CS, RST, DC, BUSY);
 MiniGrafx gfx = MiniGrafx(&epd, BITS_PER_PIXEL, palette);
 
 
+const char * networkName = "KA-WLAN";
+const char * baseUrl = "cp.ka-wlan.de";
+const int port = 80;
+const String apiUrl = "http://www.iwi.hs-karlsruhe.de/Intranetaccess/REST/buildings/facultyrooms/display/texts/";
+
 void setup() {
-    // put your setup code here, to run once:   
 
     Serial.begin(115200); // ak: Datenuebertragungsrate auf 115000 Bits/s stellen. (VS Code Default)
 
-    // Begin 24.10.18 AK Wifi-Test
     Serial.println("Setting up Network Connection");
-    boolean connectionSuccesfull = setupNetwork("KA-WLAN","","cp.ka-wlan.de",80); //10.172.0.1
+    bool connectionSuccesfull = setupNetwork(networkName,             // Netzwerkname
+                                             baseUrl,       // Basis Url KA-Wlan Login
+                                             port);                   // Port                                                              
     Serial.println("Network Connected succesfully: " + String(connectionSuccesfull));
-    // Ende 24.10.18 AK Wifi-Test
-    //requestURL("cp.ka-wlan.de", 80);
-    //requestURL2("http://www.iwi.hs-karlsruhe.de/Intranetaccess/REST/buildings/facultyrooms/display/texts/ZZ-22-33-44-55-66");
+
     pinMode(LED, OUTPUT); // PIN 5 wird Ausgabe-PIN
 
 
@@ -47,6 +50,9 @@ void setup() {
     gfx.commit();*/
 
     Serial.println("setup() done!");
+
+    if (connectionSuccesfull)
+        apiRequest(apiUrl, true); // Demo Mode für API -> bei true Demo Mode an
 
 }
 
