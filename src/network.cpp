@@ -165,6 +165,7 @@ void apiRequest(String url, boolean demoMode){
     if (httpCode > 0) { //Check for the returning code
  
         String payload = http.getString();
+        //Stream s = http.getStream();
         Serial.println("HTTP Code: "+httpCode);
         Serial.println("Response: "+payload);
       }

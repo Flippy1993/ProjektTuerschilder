@@ -28,7 +28,7 @@ MiniGrafx gfx = MiniGrafx(&epd, BITS_PER_PIXEL, palette);
 const char * networkName = "KA-WLAN";
 const char * baseUrl = "cp.ka-wlan.de";
 const int port = 80;
-const String apiUrl = "http://www.iwi.hs-karlsruhe.de/Intranetaccess/REST/buildings/facultyrooms/display/texts/";
+const String apiUrl = "http://www.iwi.hs-karlsruhe.de/Intranetaccess/REST/buildings/facultyrooms/display/image/";
 
 void setup() {
 
@@ -36,7 +36,7 @@ void setup() {
 
     Serial.println("Setting up Network Connection");
     bool connectionSuccesfull = setupNetwork(networkName,             // Netzwerkname
-                                             baseUrl,       // Basis Url KA-Wlan Login
+                                             baseUrl,                 // Basis Url KA-Wlan Login
                                              port);                   // Port                                                              
     Serial.println("Network Connected succesfully: " + String(connectionSuccesfull));
 
