@@ -7,6 +7,16 @@
 #include <sstream>
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <algorithm>
+using namespace std;
+
+struct login_t {
+  String dst;
+  String popup;
+  String username;
+  String password;
+} login;
+
 
 const int BUTTON_PIN = 0;
 const int LED_PIN = 5;
@@ -18,22 +28,18 @@ boolean setupNetwork(const char * networkName, const char * networkPswd, const c
   Serial.println("Resolving local MAC...");
   WiFi.begin(networkName, networkPswd);
   sMacAddress = getMacAddress();
+
+  String url = "http://" + (String)hostDomain + "/login";
   
   // Connect to the WiFi network (see function below loop)
   Serial.println("Starting Connection to: " + String(networkName));
   connectToWiFi(networkName, networkPswd);
 
-  delay(3000);
+  //delay(3000);
+  getLoginPage(url, sMacAddress);
+  requestURL2(url);
 
-  requestURL2(sMacAddress, localIp);
-
-  delay(3000);
-
-  requestURL2(sMacAddress, localIp);
-
-  delay(3000);
-
-  //apiRequest();
+  apiRequest();
  
   /* KA-WLAN Anmeldeseite requesten und parsen um Zugangstoken zu erhalten*/
   //Serial.println("Requesting login page to parse access token");
@@ -64,16 +70,73 @@ void connectToWiFi(const char * ssid, const char * pwd){
   Serial.println(WiFi.localIP());
 }
 
-void requestURL2(String mac, String ip){
+void getLoginPage(String url, String mac){
 
-  String url = "http://cp.ka-wlan.de/login";
+  HTTPClient http;
+  http.begin(url);
+  int httpCode = http.GET();
+  Serial.println("Sending GET -> "+url+" -> Code:" + httpCode);
+  if (httpCode > 0) { //Check for the returning code
 
-    Serial.println("Sending request to: "+url);
+      Serial.println("Extracting Request Params from Payload");
+      String payload = http.getString();
+      //Serial.println("HTTP Code: "+httpCode);
+      //Serial.println("Response: "+payload);
+
+
+      String raw = payload.substring(payload.indexOf("<form name=\"login\" action=\"http://cp.ka-wlan.de/login\" method=\"post\">"));
+      raw = raw.substring(0,raw.indexOf("</td>"));
+      String param_dst = raw.substring(raw.indexOf("name=\"dst\" value=\"")+18);
+      param_dst = param_dst.substring(0,param_dst.indexOf("\" />"));
+      String param_popup = raw.substring(raw.indexOf("name=\"popup\" value=\"")+20);
+      param_popup = param_popup.substring(0,param_popup.indexOf("\""));
+      String param_password = raw.substring(raw.indexOf("name=\"password\" type=\"password\" value=\"")+39);
+      param_password = param_password.substring(0,param_password.indexOf("\""));
+
+      login.dst = param_dst;
+      login.popup = param_popup;      
+      login.username = mac;
+      login.password = param_password;
+
+      Serial.println("dst-> "+login.dst);
+      Serial.println("popup-> "+login.popup);
+      Serial.println("username-> "+login.username);
+      Serial.println("password-> "+login.password);
+    }
+
+  else {
+    Serial.println("Error on HTTP request");
+  }
+
+  http.end(); //Free the resources
+}
+
+void requestURL2(String url){
+
+  //String url = "http://cp.ka-wlan.de/login";
+
     HTTPClient http;
-    http.begin(url); //Specify the URL
+    //http.begin(url); //Specify the URL
+    http.begin("http://cp.ka-wlan.de/login");
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-    int httpCode = http.POST("?dst=?popup=false?username="+mac+"?password=w5wb8w096"); //Make the request
- 
+
+    /*http.addHeader("dst", login.dst);
+    http.addHeader("popup", login.popup);
+    http.addHeader("username", login.username);
+    http.addHeader("password", login.password);*/
+
+    //int httpCode = http.POST("?dst="+login.dst+"?popup="+login.popup+"?username="+login.username+"?password="+login.password); //Make the request
+
+    while(login.username.indexOf(":") != -1){
+      login.username.replace(":","%");
+    }
+
+    Serial.println(login.username);
+
+    int httpCode = http.POST("dst=&popup=false&username="+login.username+"&password=w5wb8w096");
+
+    Serial.println("Sending POST -> "+url+" -> Code:" + httpCode);
+
     if (httpCode > 0) { //Check for the returning code
  
         String payload = http.getString();

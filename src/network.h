@@ -11,11 +11,13 @@ String convertMac2String(byte arrMac[6]);
 
 String getMacAddress();
 
+void getLoginPage(String url, String mac);
+
 void requestURL(const char * host, uint8_t port);
 
 void requestURL(const char * host, uint8_t port, String sMacAddress);
 
-void requestURL2(String mac, String ip);
+void requestURL2(String url);
 
 void apiRequest();
 
