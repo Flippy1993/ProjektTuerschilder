@@ -11,11 +11,13 @@ String convertMac2String(byte arrMac[6]);
 
 String getMacAddress();
 
+bool logout(String url);
+
 void extractLoginParams(String url, String mac);
 
 bool loginToWifi(String url);
 
-void apiRequest(String url, boolean demoMode);
+void apiRequest(String url, bool textmode, bool demoMode);
 
 void printLine();
 

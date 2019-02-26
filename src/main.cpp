@@ -28,7 +28,8 @@ MiniGrafx gfx = MiniGrafx(&epd, BITS_PER_PIXEL, palette);
 const char * networkName = "KA-WLAN";
 const char * baseUrl = "cp.ka-wlan.de";
 const int port = 80;
-const String apiUrl = "http://www.iwi.hs-karlsruhe.de/Intranetaccess/REST/buildings/facultyrooms/display/image/";
+const String apiUrlImage = "http://www.iwi.hs-karlsruhe.de/Intranetaccess/REST/buildings/facultyrooms/display/image/";
+const String apiUrlText = "http://www.iwi.hs-karlsruhe.de/Intranetaccess/REST/buildings/facultyrooms/display/texts/";
 
 void setup() {
 
@@ -51,9 +52,12 @@ void setup() {
 
     Serial.println("setup() done!");
 
-    if (connectionSuccesfull)
-        apiRequest(apiUrl, true); // Demo Mode für API -> bei true Demo Mode an
+    if (connectionSuccesfull){
+        //apiRequest(apiUrlText, true, true); // Demo Mode für API -> bei true Demo Mode an
+        apiRequest(apiUrlImage, false, true); // Demo Mode für API -> bei true Demo Mode an
+    }
 
+    //logout(baseUrl);
 }
 
 uint8_t rotation = 0;

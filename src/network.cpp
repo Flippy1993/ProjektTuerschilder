@@ -71,8 +71,10 @@ bool connectToWiFi(const char * ssid){
   return connected;  
 }
 
-void extractLoginParams(String url, String mac){
-
+bool logout(String url){
+  bool loggedOut = false;
+  url = "http://" + url;
+  url += "/logout";
   HTTPClient http;
   http.begin(url);
   int httpCode = http.GET();
@@ -81,7 +83,26 @@ void extractLoginParams(String url, String mac){
 
       Serial.println("Extracting Request Params from Payload");
       String payload = http.getString();
- 
+      loggedOut = true;
+  }else {
+    Serial.println("Error on HTTP request");
+    loggedOut = false;
+  }
+  http.end(); //Free the resources
+  return loggedOut;
+}
+
+void extractLoginParams(String url, String mac){
+
+  HTTPClient http;
+  http.begin(url);
+  int httpCode = http.GET();
+  Serial.println("Sending GET -> "+url+" -> Code:" + httpCode);
+  if (httpCode > 0) { //Check for the returning code
+
+      Serial.println("logged out!");
+      String payload = http.getString();
+
       String raw = payload.substring(payload.indexOf("<form name=\"login\" action=\"http://cp.ka-wlan.de/login\" method=\"post\">"));
       raw = raw.substring(0,raw.indexOf("</td>"));
       String param_dst = raw.substring(raw.indexOf("name=\"dst\" value=\"")+18);
@@ -100,9 +121,8 @@ void extractLoginParams(String url, String mac){
       Serial.println("popup-> "+login.popup);
       Serial.println("username-> "+login.username);
       Serial.println("password-> "+login.password);
-    }
 
-  else {
+  }else {
     Serial.println("Error on HTTP request");
   }
 
@@ -142,7 +162,7 @@ bool loginToWifi(String url){
     return loggedIn;
 }
 
-void apiRequest(String url, boolean demoMode){
+void apiRequest(String url, bool textmode, bool demoMode){
     //String url = "http://www.iwi.hs-karlsruhe.de/Intranetaccess/REST/buildings/facultyrooms/display/texts/ZZ-22-33-44-55-66";
 
     String demoMac = "ZZ-22-33-44-55-66";
@@ -156,26 +176,76 @@ void apiRequest(String url, boolean demoMode){
     else
       url += login.username;
 
-    Serial.println("Sending request to: "+url);
     HTTPClient http;
-    http.begin(url); //Specify the URL
-    http.addHeader("Content-Type", "text/plain");
-    int httpCode = http.GET(); //Make the request
+
+    int tries = 1;
+    bool retry = true;
+    while(retry){
+      Serial.println("["+(String)tries+"] Sending request to: "+url);      
+      http.begin(url); //Specify the URL
+      http.addHeader("Content-Type", "text/plain");
+      int httpCode = http.GET(); //Make the request
  
-    if (httpCode > 0) { //Check for the returning code
- 
-        String payload = http.getString();
-        //Stream s = http.getStream();
-        Serial.println("HTTP Code: "+httpCode);
-        Serial.println("Response: "+payload);
+      if (httpCode > 0) { //Ceck for the returning code
+          retry = false;
+
+          if(textmode){
+            String payload = http.getString();
+            Serial.println("HTTP Code: "+httpCode);
+            Serial.println("Response: "+payload);
+          }else{
+
+            int len = http.getSize();// get lenght of document (is -1 when Server sends no Content-Length header)
+            // create buffer for read
+            int currentPosition = 0;
+            // get tcp stream
+            WiFiClient * stream = http.getStreamPtr();
+
+            // read all data from server
+            while(http.connected() && (len > 0 || len == -1)) {
+              // get available data size
+              size_t size = stream->available();
+              char buffer[3]; // verify this
+              char current[3];
+              if(size) {
+                // read up to 3 byte
+                int c = stream->readBytes(buffer, ((size > sizeof(buffer)) ? sizeof(buffer): size));
+                int targetIndex = 0;
+
+                for (int x = 0; x < sizeof(buffer); x++)
+                  {
+                    current[currentPosition] = buffer[targetIndex];
+
+                    if(buffer[targetIndex] == '}')
+                    {
+                      currentPosition = 0;
+                      Serial.println(current);
+                    }
+
+                    targetIndex++;
+                    currentPosition++;
+
+                  }
+
+                if(len > 0)
+                {
+                  len -= c;
+                }
+              }
+            }
+          }
+      }else {
+        Serial.println("Error on HTTP request");
+        if(tries = 5){
+          retry = false;
+        }
+        tries++;
       }
- 
-    else {
-      Serial.println("Error on HTTP request");
     }
  
     http.end(); //Free the resources
 }
+
 
 String getMacAddress()
 {
