@@ -53,8 +53,10 @@ void setup() {
     Serial.println("setup() done!");
 
     if (connectionSuccesfull){
-        //apiRequest(apiUrlText, true, true); // Demo Mode für API -> bei true Demo Mode an
-        apiRequest(apiUrlImage, false, true); // Demo Mode für API -> bei true Demo Mode an
+        // 1. param -> Textmode, 2. param -> Demo Mode
+        apiRequest(apiUrlText, true, true); 
+        delay(2);
+        apiRequest(apiUrlImage, false, true);
     }
 
     //logout(baseUrl);

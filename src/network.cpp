@@ -1,4 +1,5 @@
 #include "network.h"
+#include "display.h"
 #include <iostream>
 #include <string>
 #include <numeric>
@@ -195,45 +196,42 @@ void apiRequest(String url, bool textmode, bool demoMode){
             Serial.println("Response: "+payload);
           }else{
 
-            int len = http.getSize();// get lenght of document (is -1 when Server sends no Content-Length header)
-            // create buffer for read
-            int currentPosition = 0;
-            // get tcp stream
-            WiFiClient * stream = http.getStreamPtr();
 
-            // read all data from server
-            while(http.connected() && (len > 0 || len == -1)) {
-              // get available data size
-              size_t size = stream->available();
-              char buffer[3]; // verify this
-              char current[3];
-              if(size) {
-                // read up to 3 byte
-                int c = stream->readBytes(buffer, ((size > sizeof(buffer)) ? sizeof(buffer): size));
-                int targetIndex = 0;
 
-                for (int x = 0; x < sizeof(buffer); x++)
-                  {
-                    current[currentPosition] = buffer[targetIndex];
 
-                    if(buffer[targetIndex] == '}')
-                    {
-                      currentPosition = 0;
-                      Serial.println(current);
+                // get lenght of document (is -1 when Server sends no Content-Length header)
+                int len = http.getSize();
+
+                // create buffer for read
+                uint8_t buff[128] = { 0 };
+                //uint8_t buff[16384] = { 0 }; // test
+
+                // get tcp stream
+                WiFiClient * stream = http.getStreamPtr();
+
+                // read all data from server
+                while(http.connected() && (len > 0 || len == -1)) {
+                    // get available data size
+                    size_t size = stream->available();
+
+                    if(size) {
+                        // read up to 128 byte
+                        int c = stream->readBytes(buff, ((size > sizeof(buff)) ? sizeof(buff) : size));
+
+                        // write it to Serial
+                        Serial.write(buff, c);
+                        if(len > 0) {
+                            len -= c;
+                        }
                     }
-
-                    targetIndex++;
-                    currentPosition++;
-
-                  }
-
-                if(len > 0)
-                {
-                  len -= c;
-                }
-              }
             }
-          }
+            delay(5000);
+            refreshScreen(buff);
+
+
+
+
+          } // Textmode == false
       }else {
         Serial.println("Error on HTTP request");
         if(tries = 5){
@@ -245,7 +243,6 @@ void apiRequest(String url, bool textmode, bool demoMode){
  
     http.end(); //Free the resources
 }
-
 
 String getMacAddress()
 {
