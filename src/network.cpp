@@ -18,7 +18,6 @@ struct login_t {
   String password;
 } login;
 
-
 const int BUTTON_PIN = 0;
 const int LED_PIN = 5;
 String localIp;
@@ -30,7 +29,14 @@ bool setupNetwork(const char * networkName, const char * hostDomain, int hostPor
   bool successfull = false;
   String sMacAddress;
   Serial.println("Resolving local MAC...");
-  WiFi.begin(networkName,"");
+//#########
+//Test
+//Serial.println("Test: Connecting to HomeWifi!");
+//WiFi.begin("SSID","PASSWORD");
+WiFi.begin(networkName,"");
+//#####
+
+  
   sMacAddress = getMacAddress();  
   
   // Connect to the WiFi network (see function below loop)
@@ -40,6 +46,7 @@ bool setupNetwork(const char * networkName, const char * hostDomain, int hostPor
   String url = "http://" + (String)hostDomain + "/login";
   extractLoginParams(url, sMacAddress);
   successfull = loginToWifi(url);  
+
  
   return successfull;
 }
@@ -196,18 +203,30 @@ void apiRequest(String url, bool textmode, bool demoMode){
             Serial.println("Response: "+payload);
           }else{
 
-
-
-
+                Serial.println("http get payload size in kByte:");
+                Serial.println(http.getSize());
+                delay(5000);
                 // get lenght of document (is -1 when Server sends no Content-Length header)
                 int len = http.getSize();
 
-                // create buffer for read
-                uint8_t buff[128] = { 0 };
-                //uint8_t buff[16384] = { 0 }; // test
+                // if document is available -> initialize screen and clear the screen buffer
+                if(len >0){
+                 // gfxInit();
+                 // gfxClearBuffer();
+                }
 
+                // create buffer for read
+                //uint8_t buff[128] = { 0 }; // max size
+                uint8_t buff[2] = {}; // test -> 16bit?
+                
                 // get tcp stream
                 WiFiClient * stream = http.getStreamPtr();
+
+                //cut first 14 bytes (124 bit) once
+                int byteCut = 0;
+
+                // Pixel Info
+                pixelInfo pixInfo;
 
                 // read all data from server
                 while(http.connected() && (len > 0 || len == -1)) {
@@ -218,23 +237,33 @@ void apiRequest(String url, bool textmode, bool demoMode){
                         // read up to 128 byte
                         int c = stream->readBytes(buff, ((size > sizeof(buff)) ? sizeof(buff) : size));
 
-                        // write it to Serial
-                        Serial.write(buff, c);
+                        // ignore the first 14 byte
+                        if(byteCut < 14){
+                          byteCut += 2;
+                        }else{
+                          // die zwei byte dann interpretieren
+                          pixInfo = refreshScreen(buff, pixInfo);
+
+                          // write it to Serial
+                          //Serial.write(buff, c);
+                        }
                         if(len > 0) {
                             len -= c;
                         }
                     }
             }
-            delay(5000);
-            refreshScreen(buff);
-
-
-
-
+            Serial.println("amountPixW: ");
+            Serial.println(pixInfo.totalAmountPixW);
+            Serial.println("amountPixB: ");
+            Serial.println(pixInfo.totalAmountPixB);
+            Serial.println("amountPixR: ");
+            Serial.println(pixInfo.totalAmountPixR);
+          
+            gfxCommitBuffer();
           } // Textmode == false
       }else {
         Serial.println("Error on HTTP request");
-        if(tries = 5){
+        if(tries == 5){
           retry = false;
         }
         tries++;

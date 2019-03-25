@@ -3,11 +3,12 @@
 #include <SPI.h>
 #include "EPD_WaveShare_75.h"
 #include "DisplayDriver.h"
-#include "network.h" // 24.10.2018 AK: Wifi Test
+#include "network.h"
 #include <WiFi.h>
+#include "display.h"
 
 
-#define CS 16
+/*#define CS 16
 #define RST 4
 #define DC 17
 #define BUSY 27
@@ -19,10 +20,12 @@
 uint16_t palette[] = {0, 3, 4}; //black, white, red
 //uint16_t palette[] = {0x00, 0x33, 0x44};
 
+EPD_WaveShare75 epd(CS, RST, DC, BUSY);
+MiniGrafx gfx = MiniGrafx(&epd, BITS_PER_PIXEL, palette);*/
+
 const int LED = 5; // I/O-Pin, Board LED // ak
 
-EPD_WaveShare75 epd(CS, RST, DC, BUSY);
-MiniGrafx gfx = MiniGrafx(&epd, BITS_PER_PIXEL, palette);
+
 
 
 const char * networkName = "KA-WLAN";
@@ -33,7 +36,8 @@ const String apiUrlText = "http://www.iwi.hs-karlsruhe.de/Intranetaccess/REST/bu
 
 void setup() {
 
-    Serial.begin(115200); // ak: Datenuebertragungsrate auf 115000 Bits/s stellen. (VS Code Default)
+    Serial.begin(115200); 
+    //Serial.begin(115000); // ak: Datenuebertragungsrate auf 115000 Bits/s stellen. (VS Code Default)
 
     Serial.println("Setting up Network Connection");
     bool connectionSuccesfull = setupNetwork(networkName,             // Netzwerkname
@@ -42,10 +46,15 @@ void setup() {
     Serial.println("Network Connected succesfully: " + String(connectionSuccesfull));
 
     pinMode(LED, OUTPUT); // PIN 5 wird Ausgabe-PIN
+    gfxInit();
+    gfxClearBuffer();
+    gfxCommitBuffer();
+
+    //gfxDemo();
 
 
-    gfx.init();
-    gfx.setRotation(1);
+    //gfx.init();
+    //gfx.setRotation(1);
     /*gfx.fillBuffer(2);
     
     gfx.commit();*/
@@ -81,7 +90,7 @@ void loop() {
 
     //requestUrl("www.google.de", 80);
 
-    gfx.setRotation(rotation);
+   /* gfx.setRotation(rotation);
     gfx.fillBuffer(3);
     gfx.setColor(0);
     gfx.setFont(ArialMT_Plain_10);
@@ -94,7 +103,7 @@ void loop() {
 
     gfx.commit();
     Serial.println("Commited buffer");
-    rotation = (rotation + 1) % 4;
+    rotation = (rotation + 1) % 4;*/
     delay(5000);
     
     Serial.println("loop() done!");
