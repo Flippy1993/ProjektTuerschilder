@@ -173,7 +173,8 @@ bool loginToWifi(String url){
 void apiRequest(String url, bool textmode, bool demoMode){
     //String url = "http://www.iwi.hs-karlsruhe.de/Intranetaccess/REST/buildings/facultyrooms/display/texts/ZZ-22-33-44-55-66";
 
-    String demoMac = "ZZ-22-33-44-55-66";
+    //String demoMac = "ZZ-22-33-44-55-66"; // Dozenten Einzelbüro
+    String demoMac = "ZZ-33-44-55-66-77"; // Dozenten Doppelbüro
 
     while(login.username.indexOf(":") != -1){
       login.username.replace("%","-");
@@ -203,16 +204,19 @@ void apiRequest(String url, bool textmode, bool demoMode){
             Serial.println("Response: "+payload);
           }else{
 
-                Serial.println("http get payload size in kByte:");
+                Serial.println("http get payload size in KB:");
                 Serial.println(http.getSize());
-                delay(5000);
+
                 // get lenght of document (is -1 when Server sends no Content-Length header)
                 int len = http.getSize();
 
                 // if document is available -> initialize screen and clear the screen buffer
-                if(len >0){
-                 // gfxInit();
-                 // gfxClearBuffer();
+                if(http.getSize() >0){
+                      gfxInit();
+                      gfxClearBuffer();
+                      //gfxDemo();
+                     gfxSetRotation(0);
+                     gfxClearBuffer();                  
                 }
 
                 // create buffer for read
@@ -252,13 +256,14 @@ void apiRequest(String url, bool textmode, bool demoMode){
                         }
                     }
             }
+            Serial.println("");
             Serial.println("amountPixW: ");
             Serial.println(pixInfo.totalAmountPixW);
             Serial.println("amountPixB: ");
             Serial.println(pixInfo.totalAmountPixB);
             Serial.println("amountPixR: ");
             Serial.println(pixInfo.totalAmountPixR);
-          
+            
             gfxCommitBuffer();
           } // Textmode == false
       }else {

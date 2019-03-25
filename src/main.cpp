@@ -43,21 +43,12 @@ void setup() {
     bool connectionSuccesfull = setupNetwork(networkName,             // Netzwerkname
                                              baseUrl,                 // Basis Url KA-Wlan Login
                                              port);                   // Port                                                              
-    Serial.println("Network Connected succesfully: " + String(connectionSuccesfull));
+    String str = "false";
+    if(connectionSuccesfull)
+        str = "true";
+    Serial.println("Network Connected succesfully: " + str);
 
     pinMode(LED, OUTPUT); // PIN 5 wird Ausgabe-PIN
-    gfxInit();
-    gfxClearBuffer();
-    gfxCommitBuffer();
-
-    //gfxDemo();
-
-
-    //gfx.init();
-    //gfx.setRotation(1);
-    /*gfx.fillBuffer(2);
-    
-    gfx.commit();*/
 
     Serial.println("setup() done!");
 

@@ -3,8 +3,8 @@
 
 
 struct coordinates {
-  int x = 0;
-  int y = 0;
+  int x = 1;
+  int y = 1;
 };
 
 struct pixelInfo {
@@ -18,13 +18,13 @@ pixelInfo refreshScreen(uint8_t* buff, pixelInfo pixInfo);
 
 coordinates draw2Byte(int amountPixW, int amountPixB, int amountPixR, coordinates coords);
 
-coordinates setPixels(int anzPixel, int col, int lastX, int lastY);
-
 void gfxInit();
 
 void gfxClearBuffer();
 
 void gfxCommitBuffer();
+
+void gfxSetRotation(int rot);
 
 void gfxDemo();
 
