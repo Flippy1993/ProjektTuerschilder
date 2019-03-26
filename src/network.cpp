@@ -24,8 +24,7 @@ String localIp;
 boolean connected = false;
 boolean loggedIn = false;
 
-bool setupNetwork(const char * networkName, const char * hostDomain, int hostPort)
-{
+bool setupNetwork(const char * networkName, const char * hostDomain, int hostPort){
   bool successfull = false;
   String sMacAddress;
   Serial.println("Resolving local MAC...");
@@ -88,8 +87,6 @@ bool logout(String url){
   int httpCode = http.GET();
   Serial.println("Sending GET -> "+url+" -> Code:" + httpCode);
   if (httpCode > 0) { //Check for the returning code
-
-      Serial.println("Extracting Request Params from Payload");
       String payload = http.getString();
       loggedOut = true;
   }else {
@@ -226,35 +223,32 @@ void apiRequest(String url, bool textmode, bool demoMode){
                 // get tcp stream
                 WiFiClient * stream = http.getStreamPtr();
 
-                //cut first 14 bytes (124 bit) once
-                int byteCut = 0;
-
                 // Pixel Info
                 pixelInfo pixInfo;
 
                 // read all data from server
                 while(http.connected() && (len > 0 || len == -1)) {
                     // get available data size
-                    size_t size = stream->available();
+                    //size_t size = stream->available();
 
-                    if(size) {
+                    //Serial.println("Size:");
+                    //Serial.println(size);
+
+                    //if(size) {
                         // read up to 128 byte
-                        int c = stream->readBytes(buff, ((size > sizeof(buff)) ? sizeof(buff) : size));
+                        //int c = stream->readBytes(buff, ((size > sizeof(buff)) ? sizeof(buff) : size));
+                        int c = stream->readBytes(buff, 2);
 
-                        // ignore the first 14 byte
-                        if(byteCut < 14){
-                          byteCut += 2;
-                        }else{
-                          // die zwei byte dann interpretieren
+                        // die zwei byte dann interpretieren
                           pixInfo = refreshScreen(buff, pixInfo);
 
                           // write it to Serial
                           //Serial.write(buff, c);
-                        }
+                        
                         if(len > 0) {
                             len -= c;
                         }
-                    }
+                    //}
             }
             Serial.println("");
             Serial.println("amountPixW: ");
@@ -263,6 +257,9 @@ void apiRequest(String url, bool textmode, bool demoMode){
             Serial.println(pixInfo.totalAmountPixB);
             Serial.println("amountPixR: ");
             Serial.println(pixInfo.totalAmountPixR);
+
+            Serial.println("amount Rows:");
+            Serial.println(pixInfo.coords.y);
             
             gfxCommitBuffer();
           } // Textmode == false
@@ -278,8 +275,7 @@ void apiRequest(String url, bool textmode, bool demoMode){
     http.end(); //Free the resources
 }
 
-String getMacAddress()
-{
+String getMacAddress(){
   String sMacAddress;
   byte mac[6];
 
@@ -304,8 +300,7 @@ String convertMac2String(byte arrMac[6]){
 }
 
 
-void printLine()
-{
+void printLine(){
   Serial.println();
   for (int i=0; i<30; i++)
     Serial.print("-");

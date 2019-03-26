@@ -3,14 +3,15 @@
 
 
 struct coordinates {
-  int x = 1;
-  int y = 1;
+  int x = 0;
+  int y = 0;
 };
 
 struct pixelInfo {
-  int totalAmountPixW;
-  int totalAmountPixB;
-  int totalAmountPixR;
+  int totalAmountPixW = 0;
+  int totalAmountPixB = 0;
+  int totalAmountPixR = 0;
+  int amountBytes = 0;
   coordinates coords;
 };
 

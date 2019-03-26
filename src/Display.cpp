@@ -17,62 +17,101 @@ using namespace std;
 #define BITS_PER_PIXEL 2
 
 uint16_t palette[] = {0, 3, 4}; //black, white, red
-//uint16_t palette[] = {0x00, 0x33, 0x44};
 
 EPD_WaveShare75 epd(CS, RST, DC, BUSY);
 MiniGrafx gfx = MiniGrafx(&epd, BITS_PER_PIXEL, palette);
 
+int sizeInByte = 0;
+int imgWidth = 0;
+int imgHeight = 0;
+
+bool printOnce1 = true;
+bool printOnce2 = true;
+bool printOnce3 = true;
+
 
 pixelInfo refreshScreen(uint8_t* buff, pixelInfo pixInfo){
-
-    coordinates coords = pixInfo.coords;
-
-    byte w = buff[0]; //img[0];
-    byte br = buff[1]; //img[1];
-    //int amountPixW = w;
-    int amountPixW = buff[0];
-    //int amountPixB = (br >> 3) & ((1 << 5)-1);
-    //int amountPixR = (((1 << 3) - 1) & (br >> (6 - 1)));
-    int amountPixB = buff[1] >> 3;
-    uint8_t b = buff[1] << 5;
-    int amountPixR = b >> 5;
-
-    /*Serial.println("amountPixW");
-    Serial.println(amountPixW);
-    Serial.println("amountPixB");
-    Serial.println(amountPixB);
-    Serial.println("amountPixR");
-    Serial.println(amountPixR);*/
+    pixInfo.amountBytes += 2;
 
 
-    //aktuelle Baustelle!!
-    coords = draw2Byte(amountPixW, amountPixB, amountPixR, coords);
+    if(pixInfo.amountBytes == 6){
 
+        for(int i = 0; i<16; i++){
+            if(i<8){
+            bitWrite(sizeInByte,i ,bitRead(buff[0],i));     
+            }else{
+            bitWrite(sizeInByte,i ,bitRead(buff[1],i-8)); 
+            }
+        }
+    }
+    if(pixInfo.amountBytes == 8){
+        for(int i = 0; i<16; i++){
+            if(i<8){
+            bitWrite(imgWidth,i ,bitRead(buff[0],i));     
+            }else{
+            bitWrite(imgWidth,i ,bitRead(buff[1],i-8)); 
+            }
+        }
+    }
+    if(pixInfo.amountBytes == 10){
+        for(int i = 0; i<16; i++){
+            if(i<8){
+            bitWrite(imgHeight,i ,bitRead(buff[0],i));     
+            }else{
+            bitWrite(imgHeight,i ,bitRead(buff[1],i-8)); 
+            }
+        }
+    }
 
-  
+    if(sizeInByte > 0 && printOnce1){
+        Serial.println("SizeInByte:");
+        Serial.println(sizeInByte);
+        printOnce1 = false;
+    }
+    if(imgWidth > 0 && printOnce2){
+        Serial.println("imgWidth:");
+        Serial.println(imgWidth);
+        printOnce2 = false;
+    }
+    if(imgHeight > 0 && printOnce3){
+        Serial.println("imgHeight:");
+        Serial.println(imgHeight);
+        printOnce3 = false;
+    }
     
-    //int anzS = (sr >> 3) & ((1 << 5)-1);
-    //int anzR = (((1 << 3) - 1) & (sr >> (6 - 1)));
-/*
-    // White
-    coords = setPixels(amountPixW, palette[1], lastX, lastY);
-    lastX = coords.x;
-    lastY = coords.y;
-    // Black
-    coords = setPixels(amountPixB, palette[0], lastX, lastY);
-    lastX = coords.x;
-    lastY = coords.y;
-    // Red
-    coords = setPixels(amountPixR, palette[2], lastX, lastY);
-    lastX = coords.x;
-    lastY = coords.y;
-    */
 
-    
-    pixInfo.totalAmountPixW += amountPixW;
-    pixInfo.totalAmountPixB += amountPixB;
-    pixInfo.totalAmountPixR += amountPixR;
-    pixInfo.coords = coords;
+
+    if(pixInfo.amountBytes > 14){
+        coordinates coords = pixInfo.coords;
+
+        /*int amountPixW = buff[0];// << 1; //??
+        uint8_t buff_1_b = buff[1];
+        uint8_t buff_1_r = buff[1];
+        int amountPixB = (int)(buff_1_b >> 3);
+        uint8_t r = (buff_1_r << 5);
+        int amountPixR = (int)(r >> 5);*/
+
+        int amountPixW = 0;
+        int amountPixB = 0;
+        int amountPixR = 0;
+
+        for(int i = 0; i<8; i++){
+                bitWrite(amountPixW,i ,bitRead(buff[0],i));
+            if(i < 3){
+                bitWrite(amountPixR,i ,bitRead(buff[1],i));
+            }else{
+                bitWrite(amountPixB,i ,bitRead(buff[1],i+3));
+            }           
+            
+        }
+
+        coords = draw2Byte(amountPixW, amountPixB, amountPixR, coords);    
+
+        pixInfo.totalAmountPixW += amountPixW;
+        pixInfo.totalAmountPixB += amountPixB;
+        pixInfo.totalAmountPixR += amountPixR;    
+        pixInfo.coords = coords;
+    }
 
     return pixInfo;
 }
@@ -87,7 +126,7 @@ coordinates draw2Byte(int amountPixW, int amountPixB, int amountPixR, coordinate
             coords.x += 1;
             if(coords.x > gfx.getWidth()){
                 coords.y += 1;
-                coords.x = 1;
+                coords.x = 0;
             }
     }
 
@@ -98,9 +137,10 @@ coordinates draw2Byte(int amountPixW, int amountPixB, int amountPixR, coordinate
             coords.x += 1;
             if(coords.x > gfx.getWidth()){
                 coords.y += 1;
-                coords.x = 1;
+                coords.x = 0;
              }
     }
+
 
     // draw red pixels
     for(int i = 0; i< amountPixR; i++){
@@ -109,7 +149,7 @@ coordinates draw2Byte(int amountPixW, int amountPixB, int amountPixR, coordinate
             coords.x += 1;
             if(coords.x > gfx.getWidth()){
                 coords.y += 1;
-                coords.x = 1;
+                coords.x = 0;
             }
     }  
 
@@ -143,12 +183,28 @@ void gfxDemo(){
 
     for(int i=0; i<3; i++){
 
+        Serial.println("Height:");
+        Serial.println(gfx.getHeight());
+        Serial.println("Width:");
+        Serial.println(gfx.getWidth());
+
         gfx.setRotation(0);
         gfx.fillBuffer(3);
         gfx.setColor(2);
-        gfx.drawLine(0, 0, gfx.getWidth(), gfx.getHeight());
+        //gfx.drawLine(0, 0, gfx.getWidth(), gfx.getHeight());
         gfx.setColor(1);
         gfx.fillCircle((gfx.getWidth()/2), (gfx.getHeight()/2), 20);
+        gfx.setColor(2);
+        gfx.setPixel(1,1);
+        gfx.setPixel(1,2);
+        gfx.setPixel(2,1);
+        gfx.setPixel(2,2);
+
+
+        gfx.setPixel(gfx.getWidth()-1,gfx.getHeight()-1);
+        gfx.setPixel(gfx.getWidth(),gfx.getHeight()-1);
+        gfx.setPixel(gfx.getWidth() -1,gfx.getHeight());
+        gfx.setPixel(gfx.getWidth(), gfx.getHeight());
 
         for(int b = 0; b<250; b++){
             gfx.setPixel(b,(gfx.getHeight()/2));
@@ -156,7 +212,9 @@ void gfxDemo(){
 
         gfx.commit();
     }
+    delay(10000);
 }
+
 
     	
  
