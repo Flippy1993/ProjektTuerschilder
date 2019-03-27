@@ -19,6 +19,10 @@ bool loginToWifi(String url);
 
 void apiRequest(String url, bool textmode, bool demoMode);
 
+int getTimeLastAccess();
+
+int getTimeNextAccess();
+
 void printLine();
 
 #endif

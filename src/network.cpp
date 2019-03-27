@@ -9,6 +9,8 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <algorithm>
+#include "sleep.h"
+
 using namespace std;
 
 struct login_t {
@@ -24,6 +26,10 @@ String localIp;
 boolean connected = false;
 boolean loggedIn = false;
 
+static bool isLectureHall = false;
+
+accessTiming at;
+
 bool setupNetwork(const char * networkName, const char * hostDomain, int hostPort){
   bool successfull = false;
   String sMacAddress;
@@ -31,7 +37,8 @@ bool setupNetwork(const char * networkName, const char * hostDomain, int hostPor
 //#########
 //Test
 //Serial.println("Test: Connecting to HomeWifi!");
-//WiFi.begin("SSID","PASSWORD");
+//WiFi.begin("SSID","PW");
+//successfull = true;
 WiFi.begin(networkName,"");
 //#####
 
@@ -47,6 +54,7 @@ WiFi.begin(networkName,"");
   successfull = loginToWifi(url);  
 
  
+
   return successfull;
 }
 
@@ -108,7 +116,10 @@ void extractLoginParams(String url, String mac){
       Serial.println("logged out!");
       String payload = http.getString();
 
-      String raw = payload.substring(payload.indexOf("<form name=\"login\" action=\"http://cp.ka-wlan.de/login\" method=\"post\">"));
+      // URL Änderung 27.03.19
+      //String raw = payload.substring(payload.indexOf("<form name=\"login\" action=\"http://cp.ka-wlan.de/login\" method=\"post\">"));
+      String raw = payload.substring(payload.indexOf("<form name=\"login\" action=\"http://cph.ka-wlan.de/login\" method=\"post\">"));
+
       raw = raw.substring(0,raw.indexOf("</td>"));
       String param_dst = raw.substring(raw.indexOf("name=\"dst\" value=\"")+18);
       param_dst = param_dst.substring(0,param_dst.indexOf("\" />"));
@@ -138,7 +149,8 @@ bool loginToWifi(String url){
 
     HTTPClient http;
     http.begin(url);
-    http.begin("http://cp.ka-wlan.de/login");
+    //http.begin("http://cp.ka-wlan.de/login"); // URL Änderung 27.03.19
+    http.begin("http://cph.ka-wlan.de/login");
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
     // Replacing all : in mac address with % for formatting as url parameter
@@ -170,8 +182,9 @@ bool loginToWifi(String url){
 void apiRequest(String url, bool textmode, bool demoMode){
     //String url = "http://www.iwi.hs-karlsruhe.de/Intranetaccess/REST/buildings/facultyrooms/display/texts/ZZ-22-33-44-55-66";
 
-    //String demoMac = "ZZ-22-33-44-55-66"; // Dozenten Einzelbüro
-    String demoMac = "ZZ-33-44-55-66-77"; // Dozenten Doppelbüro
+    String demoMac = "ZZ-22-33-44-55-66"; // Dozenten Einzelbüro
+    //String demoMac = "ZZ-33-44-55-66-77"; // Dozenten Doppelbüro
+    //String demoMac = "ZZ-77-88-99-00-AA"; // Hörsaal
 
     while(login.username.indexOf(":") != -1){
       login.username.replace("%","-");
@@ -199,6 +212,13 @@ void apiRequest(String url, bool textmode, bool demoMode){
             String payload = http.getString();
             Serial.println("HTTP Code: "+httpCode);
             Serial.println("Response: "+payload);
+
+            String roomCategory = payload.substring(payload.indexOf("#H")+2);
+                   roomCategory = roomCategory.substring(0,roomCategory.indexOf("#"));
+            if(roomCategory.indexOf("saal") >= 0){
+              isLectureHall = true;
+              Serial.println("room is a lecutre hall");
+            }
           }else{
 
                 Serial.println("http get payload size in KB:");
@@ -209,11 +229,15 @@ void apiRequest(String url, bool textmode, bool demoMode){
 
                 // if document is available -> initialize screen and clear the screen buffer
                 if(http.getSize() >0){
-                      gfxInit();
-                      gfxClearBuffer();
-                      //gfxDemo();
-                     gfxSetRotation(0);
-                     gfxClearBuffer();                  
+                  gfxInit();
+                  gfxClearBuffer();
+                  //gfxDemo();
+                  if(isLectureHall){
+                    gfxSetRotation(1);
+                  }else{
+                    gfxSetRotation(0);
+                  }
+                  gfxClearBuffer();                  
                 }
 
                 // create buffer for read
@@ -262,11 +286,17 @@ void apiRequest(String url, bool textmode, bool demoMode){
             Serial.println(pixInfo.coords.y);
             
             gfxCommitBuffer();
+
+            at.timeLastAccess = pixInfo.at.timeLastAccess;
+            at.timeNextAccess = pixInfo.at.timeNextAccess;            
+
           } // Textmode == false
       }else {
         Serial.println("Error on HTTP request");
         if(tries == 5){
           retry = false;
+          // Deep Sleep for 12 Hours
+          goToDeepSleep(12,3);
         }
         tries++;
       }
@@ -299,6 +329,13 @@ String convertMac2String(byte arrMac[6]){
   return sMac;
 }
 
+int getTimeLastAccess(){
+  return at.timeLastAccess;
+}
+
+int getTimeNextAccess(){
+  return at.timeNextAccess;
+}
 
 void printLine(){
   Serial.println();
